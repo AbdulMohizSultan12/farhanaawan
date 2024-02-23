@@ -1,0 +1,56 @@
+<?php>
+
+$owner = 'your-username';
+$repo = 'your-repository';
+$pathToDelete = 'path/to/your/file';
+$token = 'your-personal-access-token';
+
+// GitHub API endpoint for getting the current file content
+$contentEndpoint = "https://api.github.com/repos/{$owner}/{$repo}/contents/{$pathToDelete}";
+
+// GitHub API endpoint for deleting the file
+$deleteEndpoint = "https://api.github.com/repos/{$owner}/{$repo}/contents/{$pathToDelete}";
+
+// Set up headers for API requests
+$headers = [
+    'Authorization: token ' . $token,
+    'User-Agent: PHP-Script',
+];
+
+// Step 1: Get current file content
+$ch = curl_init($contentEndpoint);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+$response = curl_exec($ch);
+curl_close($ch);
+
+if (!$response) {
+    die('Error getting file content.');
+}
+
+$content = json_decode($response, true);
+
+// Step 2: Delete the file
+if (isset($content['sha'])) {
+    $data = [
+        'message' => 'Delete file',
+        'sha' => $content['sha'],
+    ];
+
+    $ch = curl_init($deleteEndpoint);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response) {
+        echo "File '{$pathToDelete}' deleted successfully.";
+    } else {
+        echo 'Error deleting file.';
+    }
+} else {
+    echo 'File not found or error getting file content.';
+}
